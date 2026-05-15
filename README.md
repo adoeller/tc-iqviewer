@@ -1,5 +1,7 @@
 # IQ Viewer WLX — HackRF IQ Data Viewer for Total Commander
 
+![Preview](Preview.png)
+
 A Total Commander WLX64 Lister plugin that displays HackRF IQ data files
 with real-time PSD spectrum and waterfall spectrogram visualization.
 
