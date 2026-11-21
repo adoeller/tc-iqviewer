@@ -1,9 +1,9 @@
-# IQ Viewer WLX — HackRF IQ Data Viewer for Total Commander
-
-![Preview](6U4.png)
+# IQ Data Viewer (wav, hackrf, vita49, sigmf) for Total Commander
 
 A Total Commander WLX64 Lister plugin that displays HackRF IQ data files
 with real-time PSD spectrum and waterfall spectrogram visualization.
+
+![Preview](6U4.png)
 
 ## Features
 
@@ -88,6 +88,72 @@ stored in Total Commander. Update that string in the Lister plugin settings when
 upgrading; replacing the DLL alone does not update the stored configuration.
 WAV auto-detection includes supported I/Q recordings; plugin order can affect
 which viewer Total Commander selects for other WAV files.
+
+## Playback keys and time display
+
+With the viewer, spectrum, toolbar buttons or position slider focused:
+- **Space** starts/stops playback without resetting the position. Holding Space
+  does not repeatedly toggle playback.
+- **Left / Right** jump back/forward by five seconds, clamped to the recording.
+  Playing audio is flushed and restarted at the new position; paused stays paused.
+- **Esc** requests closing through Total Commander's normal Lister close path.
+
+Frequency editing and combo-box selection retain their native Space/arrow keys;
+volume arrows still adjust volume. Esc first closes an open combo dropdown.
+Enter applies the frequency or activates a focused button (including icon toggles).
+These shortcuts do not change the initial focus policy for QuickView.
+
+Elapsed / total time is immediately to the left of the playback slider. Spectrum
+and waterfall share one measured gutter for dB/time labels; the redundant blank
+left strip is removed, giving both plots more horizontal room.
+
+## Appearance and high DPI
+
+Light and dark mode share one palette across controls, settings, signal legend,
+status labels and plots. Dark mode uses neutral blue/gray surfaces, light text
+and cyan accents. Audio status sits at the bottom right. The first toolbar row
+shows the recording start date/time at the right, independently of playback or
+seeking; recordings without an absolute timestamp say so rather than using file
+dates. Long hints use an ellipsis instead of taking an extra row.
+
+The speaker, filter-band and repeat icons form one group: audio activation,
+demodulation-band display and loop playback. Native accessible names, keyboard
+operation, checked state and tooltips describe their functions. Volume stays
+near the start of the audio controls. Labels are vertically centered with their
+fields; the compact frequency field is measured for exactly four integer digits,
+the decimal separator and six fractional digits, plus normal edit padding. Speed stays inline whenever space permits. Controls wrap only when
+needed; very short windows provide a vertical scrollbar for access.
+
+The spectrum header has no background badge or empty row underneath. It spells
+out Abtastrate (sample rate), in MS/s, instead of SR. This is the number of samples
+per second, not the demodulation bandwidth. Plot labels and timestamps use an
+antialiased outline font rasterized at the current DPI into a cached alpha atlas,
+rather than enlarged 5x7 glyphs.
+
+Optional configuration in `iq_viewer.ini` beside the plugin:
+
+```ini
+[Appearance]
+Theme=auto
+ScalePercent=0
+```
+
+`Theme=auto` follows Total Commander's initial theme and subsequent `lc_newparams`
+notifications, including switching back to light mode. Standalone viewers fall
+back to the Windows application theme. `Theme=dark` or `Theme=light` fixes the
+appearance independently of the host. Unknown values use `auto`.
+
+`ScalePercent=0` follows the current window DPI automatically. Values from 100 to
+300 set an explicit percentage (for example 150 or 200). Fonts, controls, spacing,
+status areas, diagram text and mouse coordinates scale together. The plugin does
+not change Total Commander's process DPI awareness. DPI notifications update the
+viewer and settings/legend dialogs. Actual monitor behavior also depends on the
+host's DPI awareness.
+
+The adjacent INI takes precedence over the INI path supplied by Total Commander.
+Values support quotes and inline `;` / `#` comments. The plugin reads these
+settings when opening a viewer and never writes them. `iq_viewer_default.ini`
+is the complete reference template; it is not read at runtime.
 
 ## Usage
 
@@ -366,9 +432,12 @@ Implementation references: [VITA FAQ](https://www.vita.com/page-1855471),
 [Wireshark field definitions](https://www.wireshark.org/docs/dfref/v/vrt.html),
 [SDRAngel header](https://github.com/f4exb/sdrangel/blob/master/sdrbase/dsp/filerecord.h).
 
+## CUDA Support
 
-## DLL unload verification
+The plugin dynamically loads NVIDIA CUDA libraries at startup:
+- `cudart64_12.dll` (fallback to versions 11, 10)
+- `cufft64_11.dll` (fallback to version 10)
 
-The DLL now unregisters its own window classes after viewers/dialogs close.
-Win32 and Win64 builds and native unload/reload regression checks pass.
-See [STATUS.md](STATUS.md) and the [test report](../unload_verification/README.md).
+If CUDA is unavailable, all DSP computation runs on CPU using a
+Cooley-Tukey radix-2 FFT implementation. The status bar shows `[GPU:...]`
+or `[CPU]` to indicate which backend is active.
